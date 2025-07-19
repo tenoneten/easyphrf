@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boat Database - PHRF Regatta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 25%, #1a252f 50%, #0f1419 100%);
+            min-height: 100vh;
+            background-attachment: fixed;
+            color: #ecf0f1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: #ecf0f1;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            color: #e74c3c;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .nav {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .nav a {
+            color: #3498db;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin: 0 15px;
+            padding: 10px 20px;
+            border: 2px solid #3498db;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .nav a:hover {
+            background: #3498db;
+            color: #2c3e50;
+            transform: translateY(-2px);
+        }
+
+        .card {
+            background: rgba(44, 62, 80, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            border: 1px solid rgba(127, 140, 141, 0.3);
+        }
+
+        .card h2 {
+            color: #e74c3c;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #bdc3c7;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #34495e;
+            border-radius: 8px;
+            background: rgba(52, 73, 94, 0.8);
+            color: #ecf0f1;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .boat-form {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr;
+            gap: 20px;
+            align-items: end;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 8px 25px rgba(149, 165, 166, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 8px 25px rgba(230, 126, 34, 0.4);
+        }
+
+        .boats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(52, 73, 94, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .boats-table th,
+        .boats-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(127, 140, 141, 0.3);
+        }
+
+        .boats-table th {
+            background: rgba(231, 76, 60, 0.8);
+            color: #ecf0f1;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .boats-table tr:hover {
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: rgba(39, 174, 96, 0.2);
+            border: 1px solid #27ae60;
+            color: #2ecc71;
+        }
+
+        .status.error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .boat-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .boats-table {
+                font-size: 0.9rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ Boat Database</h1>
+            <p>Manage boat information, skippers, and PHRF ratings</p>
+        </div>
+
+        <div class="nav">
+            <a href="admin.html">🏁 Admin</a>
+            <a href="index.html">📊 Results</a>
+        </div>
+
+        <div class="card">
+            <h2>➕ Add New Boat</h2>
+            <form id="add-boat-form">
+                <div class="boat-form">
+                    <div class="form-group">
+                        <label for="boat-name">🛥️ Boat Name:</label>
+                        <input type="text" id="boat-name" placeholder="e.g., Sea Serpent" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="skipper-name">👨‍✈️ Skipper:</label>
+                        <input type="text" id="skipper-name" placeholder="e.g., John Smith" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phrf-rating">📊 PHRF Rating:</label>
+                        <input type="number" id="phrf-rating" placeholder="e.g., 150" required>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button type="submit" class="btn">💾 Add Boat</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>📋 Boat Registry</h2>
+            <div id="status-message"></div>
+            <table class="boats-table" id="boats-table">
+                <thead>
+                    <tr>
+                        <th>🛥️ Boat Name</th>
+                        <th>👨‍✈️ Skipper</th>
+                        <th>📊 PHRF Rating</th>
+                        <th>⚙️ Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="boats-tbody">
+                    <!-- Boats will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Boat database management
+        let boats = [];
+
+        // Load boats from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBoats();
+            displayBoats();
+        });
+
+        // Add boat form submission
+        document.getElementById('add-boat-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            addBoat();
+        });
+
+        function loadBoats() {
+            const storedBoats = localStorage.getItem('phrf_boats');
+            if (storedBoats) {
+                boats = JSON.parse(storedBoats);
+            }
+        }
+
+        function saveBoats() {
+            localStorage.setItem('phrf_boats', JSON.stringify(boats));
+        }
+
+        function addBoat() {
+            const boatName = document.getElementById('boat-name').value.trim();
+            const skipperName = document.getElementById('skipper-name').value.trim();
+            const phrfRating = parseInt(document.getElementById('phrf-rating').value);
+
+            if (!boatName || !skipperName || isNaN(phrfRating)) {
+                showStatus('⚠️ Please fill in all fields correctly.', 'error');
+                return;
+            }
+
+            // Check if boat name already exists
+            if (boats.find(boat => boat.name.toLowerCase() === boatName.toLowerCase())) {
+                showStatus('⚠️ A boat with this name already exists.', 'error');
+                return;
+            }
+
+            // Add the new boat
+            boats.push({
+                id: Date.now(), // Simple ID generation
+                name: boatName,
+                skipper: skipperName,
+                phrf: phrfRating
+            });
+
+            saveBoats();
+            displayBoats();
+            
+            // Clear form
+            document.getElementById('add-boat-form').reset();
+            
+            showStatus(`✅ Boat "${boatName}" added successfully!`, 'success');
+        }
+
+        function displayBoats() {
+            const tbody = document.getElementById('boats-tbody');
+            
+            if (boats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #bdc3c7; font-style: italic;">No boats in database</td></tr>';
+                return;
+            }
+
+            // Sort boats by name
+            boats.sort((a, b) => a.name.localeCompare(b.name));
+
+            tbody.innerHTML = boats.map(boat => `
+                <tr>
+                    <td><strong>${boat.name}</strong></td>
+                    <td>${boat.skipper}</td>
+                    <td>${boat.phrf}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary" onclick="editBoat(${boat.id})" style="padding: 8px 15px; font-size: 0.9rem;">✏️ Edit</button>
+                            <button class="btn btn-danger" onclick="deleteBoat(${boat.id})" style="padding: 8px 15px; font-size: 0.9rem;">🗑️ Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function editBoat(id) {
+            const boat = boats.find(b => b.id === id);
+            if (!boat) return;
+
+            const newName = prompt('Enter new boat name:', boat.name);
+            if (newName === null) return;
+            
+            const newSkipper = prompt('Enter new skipper name:', boat.skipper);
+            if (newSkipper === null) return;
+            
+            const newPhrf = prompt('Enter new PHRF rating:', boat.phrf);
+            if (newPhrf === null) return;
+
+            const phrfNumber = parseInt(newPhrf);
+            if (isNaN(phrfNumber)) {
+                showStatus('⚠️ PHRF rating must be a number.', 'error');
+                return;
+            }
+
+            // Check if new name conflicts with existing boat (excluding current boat)
+            if (newName.toLowerCase() !== boat.name.toLowerCase() && 
+                boats.find(b => b.id !== id && b.name.toLowerCase() === newName.toLowerCase())) {
+                showStatus('⚠️ A boat with this name already exists.', 'error');
+                return;
+            }
+
+            boat.name = newName.trim();
+            boat.skipper = newSkipper.trim();
+            boat.phrf = phrfNumber;
+
+            saveBoats();
+            displayBoats();
+            showStatus(`✅ Boat "${boat.name}" updated successfully!`, 'success');
+        }
+
+        function deleteBoat(id) {
+            const boat = boats.find(b => b.id === id);
+            if (!boat) return;
+
+            if (!confirm(`Are you sure you want to delete "${boat.name}"?`)) {
+                return;
+            }
+
+            boats = boats.filter(b => b.id !== id);
+            saveBoats();
+            displayBoats();
+            showStatus(`✅ Boat "${boat.name}" deleted successfully!`, 'success');
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            
+            // Auto-hide success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        // Export function for use by other pages
+        function getBoats() {
+            return boats;
+        }
+
+        // Make getBoats available globally
+        window.getBoats = getBoats;
+    </script>
+</body>
+</html>
