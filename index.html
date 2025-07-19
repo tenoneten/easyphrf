@@ -215,7 +215,8 @@
 
         <div class="admin-link">
             <strong>🏁 Race Admin:</strong> 
-            <a href="admin.html">Go to Admin Page</a>
+            <a href="admin.html">Go to Admin Page</a> |
+            <a href="boats.html">Boat Database</a>
             (For race organizers only)
         </div>
 
@@ -306,6 +307,7 @@
                         <tr>
                             <th>🏆 Position</th>
                             <th>⛵ Boat Name</th>
+                            <th>👨‍✈️ Skipper</th>
                             <th>📊 PHRF Rating</th>
                             <th>⏱️ Finish Time</th>
                             <th>🎯 Adjusted Time</th>
@@ -322,6 +324,7 @@
                     <tr class="${rowClass}">
                         <td><strong>${positionIcon} ${boat.position}</strong></td>
                         <td>${boat.name}</td>
+                        <td>${boat.skipper || ''}</td>
                         <td>${boat.phrf}</td>
                         <td>${boat.finishTime}</td>
                         <td><strong>${boat.adjustedTime}</strong></td>

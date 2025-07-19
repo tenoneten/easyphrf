@@ -121,6 +121,37 @@
             flex: 1;
         }
 
+        .autocomplete-suggestions {
+            position: absolute;
+            background: rgba(44, 62, 80, 0.95);
+            border: 2px solid #34495e;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            margin-top: 2px;
+        }
+
+        .autocomplete-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(127, 140, 141, 0.3);
+            color: #ecf0f1;
+        }
+
+        .autocomplete-item:hover {
+            background: rgba(52, 152, 219, 0.2);
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
         .btn {
             padding: 12px 30px;
             border: none;
@@ -266,6 +297,11 @@
             <p>Command the regatta • Enter race data • Publish results</p>
         </div>
 
+        <div style="text-align: center; margin-bottom: 30px;">
+            <a href="boats.html" class="btn btn-secondary" style="margin: 0 10px;">🗂️ Manage Boat Database</a>
+            <a href="index.html" class="btn btn-secondary" style="margin: 0 10px;">📊 View Results</a>
+        </div>
+
         <div class="public-link">
             <strong>📡 Public Results Page:</strong> 
             <a href="index.html" target="_blank">View Public Results Page</a>
@@ -356,6 +392,67 @@
     <!-- Main application script -->
     <script>
         let currentRaceData = null;
+        let boats = [];
+
+        // Load boats from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBoats();
+        });
+
+        function loadBoats() {
+            const storedBoats = localStorage.getItem('phrf_boats');
+            if (storedBoats) {
+                boats = JSON.parse(storedBoats);
+            }
+        }
+
+        function handleBoatNameInput(boatNumber) {
+            const input = document.getElementById(`boat-name-${boatNumber}`);
+            const suggestionsDiv = document.getElementById(`suggestions-${boatNumber}`);
+            const query = input.value.toLowerCase().trim();
+            
+            if (query.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            // Filter boats by name
+            const matchingBoats = boats.filter(boat => 
+                boat.name.toLowerCase().includes(query)
+            );
+            
+            if (matchingBoats.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            // Generate suggestions HTML
+            let html = matchingBoats.map(boat => `
+                <div class="autocomplete-item" onclick="selectBoat(${boatNumber}, '${boat.name}', '${boat.skipper}', ${boat.phrf})">
+                    <strong>${boat.name}</strong><br>
+                    <small>Skipper: ${boat.skipper} | PHRF: ${boat.phrf}</small>
+                </div>
+            `).join('');
+            
+            suggestionsDiv.innerHTML = html;
+            suggestionsDiv.style.display = 'block';
+        }
+        
+        function selectBoat(boatNumber, name, skipper, phrf) {
+            document.getElementById(`boat-name-${boatNumber}`).value = name;
+            document.getElementById(`skipper-${boatNumber}`).value = skipper;
+            document.getElementById(`phrf-${boatNumber}`).value = phrf;
+            document.getElementById(`suggestions-${boatNumber}`).style.display = 'none';
+        }
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.form-group')) {
+                document.querySelectorAll('.autocomplete-suggestions').forEach(div => {
+                    div.style.display = 'none';
+                });
+            }
+        });
 
         function generateBoatEntries() {
             const numBoats = parseInt(document.getElementById('num-boats').value);
@@ -374,7 +471,12 @@
                         <div class="boat-inputs">
                             <div class="form-group">
                                 <label>Boat Name:</label>
-                                <input type="text" id="boat-name-${i}" placeholder="e.g., Sea Serpent">
+                                <input type="text" id="boat-name-${i}" placeholder="e.g., Sea Serpent" oninput="handleBoatNameInput(${i})" autocomplete="off">
+                                <div id="suggestions-${i}" class="autocomplete-suggestions" style="display: none;"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Skipper:</label>
+                                <input type="text" id="skipper-${i}" placeholder="e.g., John Smith">
                             </div>
                             <div class="form-group">
                                 <label>PHRF Rating:</label>
@@ -410,12 +512,13 @@
             
             for (let i = 1; i <= numBoats; i++) {
                 const name = document.getElementById(`boat-name-${i}`).value;
+                const skipper = document.getElementById(`skipper-${i}`).value || '';
                 const phrf = parseInt(document.getElementById(`phrf-${i}`).value);
                 const finishMin = parseInt(document.getElementById(`finish-min-${i}`).value);
                 const finishSec = parseInt(document.getElementById(`finish-sec-${i}`).value);
                 
                 if (!name || isNaN(phrf) || isNaN(finishMin) || isNaN(finishSec)) {
-                    showStatus(`⚠️ Please complete all fields for Boat ${i}.`, 'error');
+                    showStatus(`⚠️ Please complete all required fields for Boat ${i}.`, 'error');
                     hasErrors = true;
                     continue;
                 }
@@ -428,6 +531,7 @@
                 
                 boats.push({
                     name,
+                    skipper,
                     phrf,
                     finishTimeSeconds,
                     adjustedTimeSeconds,
@@ -518,6 +622,7 @@
                             <tr>
                                 <th>🏆 Position</th>
                                 <th>⛵ Boat Name</th>
+                                <th>👨‍✈️ Skipper</th>
                                 <th>📊 PHRF Rating</th>
                                 <th>⏱️ Finish Time</th>
                                 <th>🎯 Adjusted Time</th>
@@ -534,6 +639,7 @@
                         <tr class="${rowClass}">
                             <td><strong>${positionIcon} ${boat.position}</strong></td>
                             <td>${boat.name}</td>
+                            <td>${boat.skipper || ''}</td>
                             <td>${boat.phrf}</td>
                             <td>${boat.finishTime}</td>
                             <td><strong>${boat.adjustedTime}</strong></td>
