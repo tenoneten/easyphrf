@@ -361,7 +361,7 @@
     <!-- Firebase imports -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-        import { getFirestore, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         // Firebase configuration
         const firebaseConfig = {
@@ -382,6 +382,7 @@
         window.setDoc = setDoc;
         window.doc = doc;
         window.deleteDoc = deleteDoc;
+        window.onSnapshot = onSnapshot;
 
         // Show connection status
         window.addEventListener('load', () => {
@@ -394,15 +395,39 @@
         let currentRaceData = null;
         let boats = [];
 
-        // Load boats from localStorage on page load
+        // Load boats from Firestore after Firebase is initialized
         document.addEventListener('DOMContentLoaded', function() {
-            loadBoats();
+            // Wait for Firebase to initialize, then load boats
+            setTimeout(loadBoats, 1000);
         });
 
         function loadBoats() {
-            const storedBoats = localStorage.getItem('phrf_boats');
-            if (storedBoats) {
-                boats = JSON.parse(storedBoats);
+            // Check if Firebase is available
+            if (!window.db || !window.doc || !window.onSnapshot) {
+                console.log('Firebase not ready, retrying in 500ms...');
+                setTimeout(loadBoats, 500);
+                return;
+            }
+            
+            try {
+                // Use the globally available Firebase functions
+                const boatsDoc = window.doc(window.db, 'races', 'boat-database');
+                
+                boatUnsubscribe = window.onSnapshot(boatsDoc, (docSnapshot) => {
+                    if (docSnapshot.exists()) {
+                        const data = docSnapshot.data();
+                        boats = data.boats || [];
+                    } else {
+                        boats = [];
+                    }
+                    console.log('Loaded boats for autocomplete:', boats);
+                }, (error) => {
+                    console.error('Error loading boats for autocomplete:', error);
+                    boats = [];
+                });
+            } catch (error) {
+                console.error('Error setting up boat listener:', error);
+                boats = [];
             }
         }
 
@@ -678,6 +703,13 @@
                 }, 5000);
             }
         }
+        
+        // Cleanup listener when page unloads
+        window.addEventListener('beforeunload', () => {
+            if (boatUnsubscribe) {
+                boatUnsubscribe();
+            }
+        });
     </script>
 </body>
 </html>
