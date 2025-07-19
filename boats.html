@@ -277,14 +277,45 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js';
+        import { getFirestore, collection, doc, getDocs, addDoc, updateDoc, deleteDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMV8P5x3XD1gAybmhpXPORYKnCIoJtt1k",
+            authDomain: "phrf-results.firebaseapp.com",
+            projectId: "phrf-results",
+            storageBucket: "phrf-results.firebasestorage.app",
+            messagingSenderId: "581881436648",
+            appId: "1:581881436648:web:68e4b75c3f2a3827fe6c5d"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Make Firebase available globally
+        window.db = db;
+        window.collection = collection;
+        window.doc = doc;
+        window.getDocs = getDocs;
+        window.addDoc = addDoc;
+        window.updateDoc = updateDoc;
+        window.deleteDoc = deleteDoc;
+        window.setDoc = setDoc;
+        window.onSnapshot = onSnapshot;
+    </script>
+
     <script>
         // Boat database management
         let boats = [];
+        let unsubscribe = null;
 
-        // Load boats from localStorage on page load
+        // Load boats from Firestore on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadBoats();
-            displayBoats();
         });
 
         // Add boat form submission
@@ -294,17 +325,24 @@
         });
 
         function loadBoats() {
-            const storedBoats = localStorage.getItem('phrf_boats');
-            if (storedBoats) {
-                boats = JSON.parse(storedBoats);
-            }
+            // Set up real-time listener for boats stored in races collection
+            const boatsDoc = window.doc(window.db, 'races', 'boat-database');
+            
+            unsubscribe = window.onSnapshot(boatsDoc, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    boats = data.boats || [];
+                } else {
+                    boats = [];
+                }
+                displayBoats();
+            }, (error) => {
+                console.error('Error loading boats:', error);
+                showStatus('⚠️ Error loading boats from database.', 'error');
+            });
         }
 
-        function saveBoats() {
-            localStorage.setItem('phrf_boats', JSON.stringify(boats));
-        }
-
-        function addBoat() {
+        async function addBoat() {
             const boatName = document.getElementById('boat-name').value.trim();
             const skipperName = document.getElementById('skipper-name').value.trim();
             const phrfRating = parseInt(document.getElementById('phrf-rating').value);
@@ -320,21 +358,31 @@
                 return;
             }
 
-            // Add the new boat
-            boats.push({
-                id: Date.now(), // Simple ID generation
-                name: boatName,
-                skipper: skipperName,
-                phrf: phrfRating
-            });
-
-            saveBoats();
-            displayBoats();
-            
-            // Clear form
-            document.getElementById('add-boat-form').reset();
-            
-            showStatus(`✅ Boat "${boatName}" added successfully!`, 'success');
+            try {
+                // Add the new boat to the boat database document
+                const newBoat = {
+                    id: Date.now().toString(), // Simple ID generation
+                    name: boatName,
+                    skipper: skipperName,
+                    phrf: phrfRating,
+                    created: new Date().toISOString()
+                };
+                
+                const updatedBoats = [...boats, newBoat];
+                const boatsDoc = window.doc(window.db, 'races', 'boat-database');
+                await window.setDoc(boatsDoc, {
+                    boats: updatedBoats,
+                    updated: new Date().toISOString()
+                });
+                
+                // Clear form
+                document.getElementById('add-boat-form').reset();
+                
+                showStatus(`✅ Boat "${boatName}" added successfully!`, 'success');
+            } catch (error) {
+                console.error('Error adding boat:', error);
+                showStatus('❗ Error adding boat to database.', 'error');
+            }
         }
 
         function displayBoats() {
@@ -363,7 +411,7 @@
             `).join('');
         }
 
-        function editBoat(id) {
+        async function editBoat(id) {
             const boat = boats.find(b => b.id === id);
             if (!boat) return;
 
@@ -389,16 +437,35 @@
                 return;
             }
 
-            boat.name = newName.trim();
-            boat.skipper = newSkipper.trim();
-            boat.phrf = phrfNumber;
-
-            saveBoats();
-            displayBoats();
-            showStatus(`✅ Boat "${boat.name}" updated successfully!`, 'success');
+            try {
+                // Update boat in the boat database document
+                const updatedBoats = boats.map(b => {
+                    if (b.id === id) {
+                        return {
+                            ...b,
+                            name: newName.trim(),
+                            skipper: newSkipper.trim(),
+                            phrf: phrfNumber,
+                            updated: new Date().toISOString()
+                        };
+                    }
+                    return b;
+                });
+                
+                const boatsDoc = window.doc(window.db, 'races', 'boat-database');
+                await window.setDoc(boatsDoc, {
+                    boats: updatedBoats,
+                    updated: new Date().toISOString()
+                });
+                
+                showStatus(`✅ Boat "${newName.trim()}" updated successfully!`, 'success');
+            } catch (error) {
+                console.error('Error updating boat:', error);
+                showStatus('❗ Error updating boat in database.', 'error');
+            }
         }
 
-        function deleteBoat(id) {
+        async function deleteBoat(id) {
             const boat = boats.find(b => b.id === id);
             if (!boat) return;
 
@@ -406,10 +473,20 @@
                 return;
             }
 
-            boats = boats.filter(b => b.id !== id);
-            saveBoats();
-            displayBoats();
-            showStatus(`✅ Boat "${boat.name}" deleted successfully!`, 'success');
+            try {
+                // Remove boat from the boat database document
+                const updatedBoats = boats.filter(b => b.id !== id);
+                const boatsDoc = window.doc(window.db, 'races', 'boat-database');
+                await window.setDoc(boatsDoc, {
+                    boats: updatedBoats,
+                    updated: new Date().toISOString()
+                });
+                
+                showStatus(`✅ Boat "${boat.name}" deleted successfully!`, 'success');
+            } catch (error) {
+                console.error('Error deleting boat:', error);
+                showStatus('❗ Error deleting boat from database.', 'error');
+            }
         }
 
         function showStatus(message, type) {
@@ -431,6 +508,13 @@
 
         // Make getBoats available globally
         window.getBoats = getBoats;
+        
+        // Cleanup listener when page unloads
+        window.addEventListener('beforeunload', () => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        });
     </script>
 </body>
 </html>
