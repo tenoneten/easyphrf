@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Results - PHRF Regatta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 25%, #1a252f 50%, #0f1419 100%);
+            min-height: 100vh;
+            background-attachment: fixed;
+            color: #ecf0f1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: #ecf0f1;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            color: #e74c3c;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: rgba(44, 62, 80, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #ecf0f1;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(44, 62, 80, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            color: #ecf0f1;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(127, 140, 141, 0.3);
+        }
+
+        .results-table th {
+            background: #e74c3c;
+            color: #ecf0f1;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .results-table tr:hover {
+            background: rgba(52, 73, 94, 0.8);
+        }
+
+        .place-1 { background: rgba(231, 76, 60, 0.3); }
+        .place-2 { background: rgba(149, 165, 166, 0.3); }
+        .place-3 { background: rgba(241, 196, 15, 0.3); }
+
+        .status {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status.loading {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+            border: 1px solid rgba(52, 152, 219, 0.5);
+        }
+
+        .status.no-results {
+            background: rgba(149, 165, 166, 0.2);
+            color: #95a5a6;
+            border: 1px solid rgba(149, 165, 166, 0.5);
+        }
+
+        .status.error {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.5);
+        }
+
+        .race-info {
+            background: rgba(52, 73, 94, 0.6);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .race-info h3 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .race-info p {
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .refresh-btn {
+            background: #e74c3c;
+            color: #ecf0f1;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-left: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .admin-link {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            text-align: center;
+        }
+
+        .admin-link a {
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .admin-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .results-table {
+                font-size: 0.9rem;
+            }
+            
+            .results-table th,
+            .results-table td {
+                padding: 10px 8px;
+            }
+
+            .race-info {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>☠️ Race Results ⚓</h1>
+            <p>Live regatta standings • PHRF handicap system</p>
+        </div>
+
+        <div class="admin-link">
+            <strong>🏁 Race Admin:</strong> 
+            <a href="admin.html">Go to Admin Page</a>
+            (For race organizers only)
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Current Race Results</h2>
+                <button class="refresh-btn" onclick="location.reload()">🔄 Refresh</button>
+            </div>
+            
+            <div id="results-status">
+                <div class="status loading">
+                    <div class="loading-spinner"></div>
+                    Connecting to race data...
+                </div>
+            </div>
+            
+            <div id="race-results"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js';
+        import { getFirestore, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js';
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMV8P5x3XD1gAybmhpXPORYKnCIoJtt1k",
+            authDomain: "phrf-results.firebaseapp.com",
+            projectId: "phrf-results",
+            storageBucket: "phrf-results.firebasestorage.app",
+            messagingSenderId: "581881436648",
+            appId: "1:581881436648:web:68e4b75c3f2a3827fe6c5d"
+        };
+
+        // Initialize Firebase when page loads
+        try {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            
+            console.log('Firebase initialized successfully');
+            
+            // Set up real-time listener for published results
+            const publishedResultsRef = doc(db, 'races', 'current-published');
+            
+            onSnapshot(publishedResultsRef, (docSnapshot) => {
+                console.log('Firestore snapshot received');
+                
+                if (docSnapshot.exists()) {
+                    console.log('Document exists with data:', docSnapshot.data());
+                    displayResults(docSnapshot.data());
+                } else {
+                    console.log('No document found');
+                    showNoResults();
+                }
+            }, (error) => {
+                console.error('Error listening to results:', error);
+                showError('Unable to connect to race data. Please check your connection.');
+            });
+
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            showError('Unable to connect to race data. Please try refreshing the page.');
+        }
+
+        // Make functions available globally
+        window.displayResults = displayResults;
+        window.showNoResults = showNoResults;
+        window.showError = showError;
+
+        function displayResults(raceData) {
+            console.log('Displaying results:', raceData);
+            const statusContainer = document.getElementById('results-status');
+            const resultsContainer = document.getElementById('race-results');
+            
+            statusContainer.style.display = 'none';
+            
+            let html = `
+                <div class="race-info">
+                    <h3>${raceData.raceName}</h3>
+                    <p><strong>📏 Course Distance:</strong> ${raceData.courseDistance} nautical miles</p>
+                    <p><strong>⛵ Number of Boats:</strong> ${raceData.boats.length}</p>
+                    <p><strong>📅 Published:</strong> ${new Date(raceData.timestamp).toLocaleString()}</p>
+                </div>
+                
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>🏆 Position</th>
+                            <th>⛵ Boat Name</th>
+                            <th>📊 PHRF Rating</th>
+                            <th>⏱️ Finish Time</th>
+                            <th>🎯 Adjusted Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            raceData.boats.forEach(boat => {
+                const rowClass = boat.position <= 3 ? `place-${boat.position}` : '';
+                const positionIcon = boat.position === 1 ? '🥇' : boat.position === 2 ? '🥈' : boat.position === 3 ? '🥉' : '';
+                
+                html += `
+                    <tr class="${rowClass}">
+                        <td><strong>${positionIcon} ${boat.position}</strong></td>
+                        <td>${boat.name}</td>
+                        <td>${boat.phrf}</td>
+                        <td>${boat.finishTime}</td>
+                        <td><strong>${boat.adjustedTime}</strong></td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            resultsContainer.innerHTML = html;
+        }
+
+        function showNoResults() {
+            console.log('Showing no results message');
+            const statusContainer = document.getElementById('results-status');
+            const resultsContainer = document.getElementById('race-results');
+            
+            statusContainer.innerHTML = `
+                <div class="status no-results">
+                    ⚓ No race results have been published yet. Check back soon!
+                </div>
+            `;
+            statusContainer.style.display = 'block';
+            resultsContainer.innerHTML = '';
+        }
+
+        function showError(message) {
+            console.log('Showing error:', message);
+            const statusContainer = document.getElementById('results-status');
+            const resultsContainer = document.getElementById('race-results');
+            
+            statusContainer.innerHTML = `
+                <div class="status error">
+                    ⚠️ ${message}
+                </div>
+            `;
+            statusContainer.style.display = 'block';
+            resultsContainer.innerHTML = '';
+        }
+    </script>
+</body>
+</html>

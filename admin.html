@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Admin - PHRF Regatta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 25%, #1a252f 50%, #0f1419 100%);
+            min-height: 100vh;
+            background-attachment: fixed;
+            color: #ecf0f1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: #ecf0f1;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            color: #e74c3c;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: rgba(44, 62, 80, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            color: #ecf0f1;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #ecf0f1;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #7f8c8d;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            background: rgba(52, 73, 94, 0.8);
+            color: #ecf0f1;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2);
+        }
+
+        input::placeholder {
+            color: #bdc3c7;
+        }
+
+        select option {
+            background: #34495e;
+            color: #ecf0f1;
+        }
+
+        .boat-entry {
+            background: rgba(52, 73, 94, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 2px solid rgba(127, 140, 141, 0.5);
+        }
+
+        .boat-entry h3 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .boat-inputs {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .time-inputs input {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #e74c3c;
+            color: #ecf0f1;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: #ecf0f1;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: rgba(44, 62, 80, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            color: #ecf0f1;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(127, 140, 141, 0.3);
+        }
+
+        .results-table th {
+            background: #e74c3c;
+            color: #ecf0f1;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .results-table tr:hover {
+            background: rgba(52, 73, 94, 0.8);
+        }
+
+        .place-1 { background: rgba(231, 76, 60, 0.3); }
+        .place-2 { background: rgba(149, 165, 166, 0.3); }
+        .place-3 { background: rgba(241, 196, 15, 0.3); }
+
+        .status {
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: rgba(39, 174, 96, 0.2);
+            color: #2ecc71;
+            border: 1px solid rgba(39, 174, 96, 0.5);
+        }
+
+        .status.error {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.5);
+        }
+
+        .race-info {
+            background: rgba(52, 73, 94, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .race-info h3 {
+            color: #e74c3c;
+            margin-bottom: 10px;
+        }
+
+        .public-link {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid rgba(52, 152, 219, 0.5);
+        }
+
+        .public-link a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .public-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .boat-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            .results-table {
+                font-size: 0.9rem;
+            }
+            
+            .results-table th,
+            .results-table td {
+                padding: 10px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>☠️ Race Admin ⚓</h1>
+            <p>Command the regatta • Enter race data • Publish results</p>
+        </div>
+
+        <div class="public-link">
+            <strong>📡 Public Results Page:</strong> 
+            <a href="index.html" target="_blank">View Public Results Page</a>
+            (Share this link with spectators)
+        </div>
+
+        <div class="card">
+            <h2>🏁 Race Setup & Results</h2>
+            <div id="admin-status"></div>
+            
+            <div class="form-group">
+                <label for="race-name">🏆 Race Name:</label>
+                <input type="text" id="race-name" placeholder="e.g., Blackbeard's Cup - Race 1">
+            </div>
+
+            <div class="form-group">
+                <label for="course-distance">📏 Course Distance (nautical miles):</label>
+                <input type="number" id="course-distance" step="0.1" placeholder="e.g., 5.2">
+            </div>
+
+            <div class="form-group">
+                <label for="num-boats">⛵ Number of Boats:</label>
+                <select id="num-boats" onchange="generateBoatEntries()">
+                    <option value="">Select number of boats</option>
+                    <option value="3">3 boats</option>
+                    <option value="4">4 boats</option>
+                    <option value="5">5 boats</option>
+                    <option value="6">6 boats</option>
+                    <option value="7">7 boats</option>
+                    <option value="8">8 boats</option>
+                    <option value="9">9 boats</option>
+                    <option value="10">10 boats</option>
+                    <option value="12">12 boats</option>
+                    <option value="15">15 boats</option>
+                </select>
+            </div>
+
+            <div id="boat-entries"></div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn btn-primary" onclick="calculateResults()">🧮 Calculate Results</button>
+                <button class="btn btn-success" onclick="publishResults()" id="publish-btn" disabled>📡 Publish Results Live</button>
+                <button class="btn btn-secondary" onclick="clearResults()" id="clear-btn">🗑️ Clear Results</button>
+            </div>
+
+            <div id="publish-status" style="display: none; margin-top: 20px;">
+                <div class="status success" style="background: rgba(39, 174, 96, 0.3); color: #2ecc71; border: 2px solid #27ae60; font-size: 1.2rem; text-align: center; padding: 20px;">
+                    🎉 <strong>RESULTS ARE NOW LIVE!</strong><br>
+                    The race results are published and visible to everyone on the public results page.
+                </div>
+            </div>
+
+            <div id="preview-results"></div>
+        </div>
+    </div>
+
+    <!-- Firebase imports -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMV8P5x3XD1gAybmhpXPORYKnCIoJtt1k",
+            authDomain: "phrf-results.firebaseapp.com",
+            projectId: "phrf-results",
+            storageBucket: "phrf-results.firebasestorage.app",
+            messagingSenderId: "581881436648",
+            appId: "1:581881436648:web:68e4b75c3f2a3827fe6c5d"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Make Firebase available globally
+        window.db = db;
+        window.setDoc = setDoc;
+        window.doc = doc;
+        window.deleteDoc = deleteDoc;
+
+        // Show connection status
+        window.addEventListener('load', () => {
+            showStatus('🔥 Firebase connected! Ready to manage races.', 'success');
+        });
+    </script>
+
+    <!-- Main application script -->
+    <script>
+        let currentRaceData = null;
+
+        function generateBoatEntries() {
+            const numBoats = parseInt(document.getElementById('num-boats').value);
+            const container = document.getElementById('boat-entries');
+            
+            if (!numBoats) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            for (let i = 1; i <= numBoats; i++) {
+                html += `
+                    <div class="boat-entry">
+                        <h3>⛵ Boat ${i}</h3>
+                        <div class="boat-inputs">
+                            <div class="form-group">
+                                <label>Boat Name:</label>
+                                <input type="text" id="boat-name-${i}" placeholder="e.g., Sea Serpent">
+                            </div>
+                            <div class="form-group">
+                                <label>PHRF Rating:</label>
+                                <input type="number" id="phrf-${i}" placeholder="e.g., 150">
+                            </div>
+                            <div class="form-group">
+                                <label>Finish Time:</label>
+                                <div class="time-inputs">
+                                    <input type="number" id="finish-min-${i}" placeholder="Minutes" min="0">
+                                    <input type="number" id="finish-sec-${i}" placeholder="Seconds" min="0" max="59">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function calculateResults() {
+            const raceName = document.getElementById('race-name').value;
+            const courseDistance = parseFloat(document.getElementById('course-distance').value);
+            const numBoats = parseInt(document.getElementById('num-boats').value);
+            
+            if (!raceName || !courseDistance || !numBoats) {
+                showStatus('⚠️ Please fill in race name, course distance, and number of boats.', 'error');
+                return;
+            }
+            
+            const boats = [];
+            let hasErrors = false;
+            
+            for (let i = 1; i <= numBoats; i++) {
+                const name = document.getElementById(`boat-name-${i}`).value;
+                const phrf = parseInt(document.getElementById(`phrf-${i}`).value);
+                const finishMin = parseInt(document.getElementById(`finish-min-${i}`).value);
+                const finishSec = parseInt(document.getElementById(`finish-sec-${i}`).value);
+                
+                if (!name || isNaN(phrf) || isNaN(finishMin) || isNaN(finishSec)) {
+                    showStatus(`⚠️ Please complete all fields for Boat ${i}.`, 'error');
+                    hasErrors = true;
+                    continue;
+                }
+                
+                const finishTimeSeconds = (finishMin * 60) + finishSec;
+                
+                // PHRF calculation: Adjusted Time = Finish Time - (PHRF Rating × Distance / 3600)
+                const adjustmentSeconds = (phrf * courseDistance) / 3600 * 3600;
+                const adjustedTimeSeconds = finishTimeSeconds - adjustmentSeconds;
+                
+                boats.push({
+                    name,
+                    phrf,
+                    finishTimeSeconds,
+                    adjustedTimeSeconds,
+                    finishTime: formatTime(finishTimeSeconds),
+                    adjustedTime: formatTime(adjustedTimeSeconds)
+                });
+            }
+            
+            if (hasErrors) return;
+            
+            // Sort by adjusted time (fastest first)
+            boats.sort((a, b) => a.adjustedTimeSeconds - b.adjustedTimeSeconds);
+            
+            // Add positions
+            boats.forEach((boat, index) => {
+                boat.position = index + 1;
+            });
+            
+            currentRaceData = {
+                raceName,
+                courseDistance,
+                boats,
+                timestamp: new Date().toISOString()
+            };
+            
+            displayResults(currentRaceData);
+            document.getElementById('publish-btn').disabled = false;
+            showStatus('✅ Results calculated! Review below and click "Publish Results Live".', 'success');
+        }
+
+        async function publishResults() {
+            if (!currentRaceData) {
+                showStatus('⚠️ No results to publish. Calculate results first.', 'error');
+                return;
+            }
+            
+            try {
+                await window.setDoc(window.doc(window.db, 'races', 'current-published'), currentRaceData);
+                showStatus('🎉 Results published successfully!', 'success');
+                
+                // Show the prominent "LIVE" message
+                document.getElementById('publish-status').style.display = 'block';
+                
+                // Hide the message after 10 seconds
+                setTimeout(() => {
+                    document.getElementById('publish-status').style.display = 'none';
+                }, 10000);
+                
+            } catch (error) {
+                console.error('Error publishing results:', error);
+                showStatus('❌ Error publishing results. Please try again.', 'error');
+            }
+        }
+
+        async function clearResults() {
+            if (!confirm('Are you sure you want to clear all published results? This will remove them from the public results page.')) {
+                return;
+            }
+            
+            try {
+                // Delete the published results document
+                await window.deleteDoc(window.doc(window.db, 'races', 'current-published'));
+                showStatus('🗑️ Results cleared successfully. The public results page now shows no results.', 'success');
+                
+                // Hide the publish status message if it's showing
+                document.getElementById('publish-status').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error clearing results:', error);
+                showStatus('❌ Error clearing results. Please try again.', 'error');
+            }
+        }
+
+        function displayResults(raceData) {
+            const container = document.getElementById('preview-results');
+            
+            let html = `
+                <div style="margin-top: 30px;">
+                    <h3>📊 Results Preview</h3>
+                    <div class="race-info">
+                        <h3>${raceData.raceName}</h3>
+                        <p><strong>📏 Course Distance:</strong> ${raceData.courseDistance} nautical miles</p>
+                        <p><strong>⛵ Number of Boats:</strong> ${raceData.boats.length}</p>
+                    </div>
+                    
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>🏆 Position</th>
+                                <th>⛵ Boat Name</th>
+                                <th>📊 PHRF Rating</th>
+                                <th>⏱️ Finish Time</th>
+                                <th>🎯 Adjusted Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                raceData.boats.forEach(boat => {
+                    const rowClass = boat.position <= 3 ? `place-${boat.position}` : '';
+                    const positionIcon = boat.position === 1 ? '🥇' : boat.position === 2 ? '🥈' : boat.position === 3 ? '🥉' : '';
+                    
+                    html += `
+                        <tr class="${rowClass}">
+                            <td><strong>${positionIcon} ${boat.position}</strong></td>
+                            <td>${boat.name}</td>
+                            <td>${boat.phrf}</td>
+                            <td>${boat.finishTime}</td>
+                            <td><strong>${boat.adjustedTime}</strong></td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function formatTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+            
+            if (hours > 0) {
+                return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('admin-status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.innerHTML = '';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>
