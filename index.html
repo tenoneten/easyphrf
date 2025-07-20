@@ -234,7 +234,7 @@
             .results-table td {
                 border: none;
                 position: relative;
-                padding: 8px 10px 8px 50%;
+                padding: 8px 15px 8px 48%;
                 text-align: left;
                 white-space: normal;
             }
@@ -242,13 +242,15 @@
             .results-table td:before {
                 content: attr(data-label);
                 position: absolute;
-                left: 10px;
-                width: 45%;
-                padding-right: 10px;
+                left: 15px;
+                width: 30%;
+                padding-right: 0;
                 white-space: nowrap;
                 text-align: left;
                 font-weight: bold;
                 color: #bdc3c7;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             
             /* Hide mobile card layout on mobile - we're improving the table instead */
