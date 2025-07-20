@@ -114,11 +114,17 @@
 
         .time-inputs {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            align-items: center;
         }
 
         .time-inputs input {
             flex: 1;
+            min-width: 60px;
+        }
+        
+        .time-inputs input::placeholder {
+            font-size: 0.85rem;
         }
 
         .autocomplete-suggestions {
@@ -510,6 +516,7 @@
                             <div class="form-group">
                                 <label>Finish Time:</label>
                                 <div class="time-inputs">
+                                    <input type="number" id="finish-hr-${i}" placeholder="Hours" min="0">
                                     <input type="number" id="finish-min-${i}" placeholder="Minutes" min="0">
                                     <input type="number" id="finish-sec-${i}" placeholder="Seconds" min="0" max="59">
                                 </div>
@@ -539,16 +546,20 @@
                 const name = document.getElementById(`boat-name-${i}`).value;
                 const skipper = document.getElementById(`skipper-${i}`).value || '';
                 const phrf = parseInt(document.getElementById(`phrf-${i}`).value);
-                const finishMin = parseInt(document.getElementById(`finish-min-${i}`).value);
-                const finishSec = parseInt(document.getElementById(`finish-sec-${i}`).value);
                 
-                if (!name || isNaN(phrf) || isNaN(finishMin) || isNaN(finishSec)) {
-                    showStatus(`⚠️ Please complete all required fields for Boat ${i}.`, 'error');
+                // Get time values, defaulting to 0 if empty or invalid
+                const finishHr = parseInt(document.getElementById(`finish-hr-${i}`).value) || 0;
+                const finishMin = parseInt(document.getElementById(`finish-min-${i}`).value) || 0;
+                const finishSec = parseInt(document.getElementById(`finish-sec-${i}`).value) || 0;
+                
+                // Validate required fields - at least name, phrf, and some time must be entered
+                if (!name || isNaN(phrf) || (finishHr === 0 && finishMin === 0 && finishSec === 0)) {
+                    showStatus(`⚠️ Please complete boat name, PHRF rating, and finish time for Boat ${i}.`, 'error');
                     hasErrors = true;
                     continue;
                 }
                 
-                const finishTimeSeconds = (finishMin * 60) + finishSec;
+                const finishTimeSeconds = (finishHr * 3600) + (finishMin * 60) + finishSec;
                 
                 // PHRF calculation: Adjusted Time = Finish Time - (PHRF Rating × Distance / 3600)
                 const adjustmentSeconds = (phrf * courseDistance) / 3600 * 3600;
@@ -682,15 +693,23 @@
         }
 
         function formatTime(totalSeconds) {
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = Math.floor(totalSeconds % 60);
+            // Handle negative times properly
+            const isNegative = totalSeconds < 0;
+            const absSeconds = Math.abs(totalSeconds);
             
+            const hours = Math.floor(absSeconds / 3600);
+            const minutes = Math.floor((absSeconds % 3600) / 60);
+            const seconds = Math.floor(absSeconds % 60);
+            
+            let timeString;
             if (hours > 0) {
-                return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                timeString = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             } else {
-                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             }
+            
+            // Add negative sign at the beginning if needed
+            return isNegative ? `-${timeString}` : timeString;
         }
 
         function showStatus(message, type) {
