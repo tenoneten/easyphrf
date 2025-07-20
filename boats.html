@@ -182,6 +182,41 @@
         .action-buttons {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .edit-input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #3498db;
+            border-radius: 4px;
+            background: rgba(52, 73, 94, 0.8);
+            color: #ecf0f1;
+            font-size: 1rem;
+        }
+        
+        .edit-input:focus {
+            outline: none;
+            border-color: #e74c3c;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.3);
+        }
+        
+        .boat-row.editing .display-value {
+            display: none;
+        }
+        
+        .boat-row.editing .edit-input {
+            display: block !important;
+        }
+        
+        .boat-row.editing .edit-btn,
+        .boat-row.editing .delete-btn {
+            display: none !important;
+        }
+        
+        .boat-row.editing .save-btn,
+        .boat-row.editing .cancel-btn {
+            display: inline-block !important;
         }
 
         .status {
@@ -214,11 +249,27 @@
             }
             
             .boats-table {
-                font-size: 0.9rem;
+                font-size: 0.85rem;
+            }
+            
+            .boats-table th,
+            .boats-table td {
+                padding: 8px 4px;
             }
             
             .action-buttons {
                 flex-direction: column;
+                gap: 5px;
+            }
+            
+            .action-buttons .btn {
+                font-size: 0.8rem !important;
+                padding: 6px 10px !important;
+            }
+            
+            .edit-input {
+                font-size: 0.9rem;
+                padding: 6px;
             }
         }
     </style>
@@ -397,55 +448,109 @@
             boats.sort((a, b) => a.name.localeCompare(b.name));
 
             tbody.innerHTML = boats.map(boat => `
-                <tr>
-                    <td><strong>${boat.name}</strong></td>
-                    <td>${boat.skipper}</td>
-                    <td>${boat.phrf}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-secondary" onclick="editBoat('${boat.id}')" style="padding: 8px 15px; font-size: 0.9rem;">✏️ Edit</button>
-                            <button class="btn btn-danger" onclick="deleteBoat('${boat.id}')" style="padding: 8px 15px; font-size: 0.9rem;">🗑️ Delete</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            <tr id="boat-row-${boat.id}" class="boat-row">
+                <td class="boat-name-cell">
+                    <span class="display-value"><strong>${boat.name}</strong></span>
+                    <input type="text" class="edit-input" value="${boat.name}" style="display: none;" onkeydown="handleEditKeydown(event, '${boat.id}')">
+                </td>
+                <td class="boat-skipper-cell">
+                    <span class="display-value">${boat.skipper}</span>
+                    <input type="text" class="edit-input" value="${boat.skipper}" style="display: none;" onkeydown="handleEditKeydown(event, '${boat.id}')">
+                </td>
+                <td class="boat-phrf-cell">
+                    <span class="display-value">${boat.phrf}</span>
+                    <input type="number" class="edit-input" value="${boat.phrf}" style="display: none;" onkeydown="handleEditKeydown(event, '${boat.id}')">
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary edit-btn" onclick="enterEditMode('${boat.id}')" style="padding: 8px 15px; font-size: 0.9rem;">✏️ Edit</button>
+                        <button class="btn btn-success save-btn" onclick="saveBoat('${boat.id}')" style="padding: 8px 15px; font-size: 0.9rem; display: none;">✅ Save</button>
+                        <button class="btn btn-secondary cancel-btn" onclick="cancelEdit('${boat.id}')" style="padding: 8px 15px; font-size: 0.9rem; display: none;">❌ Cancel</button>
+                        <button class="btn btn-danger delete-btn" onclick="deleteBoat('${boat.id}')" style="padding: 8px 15px; font-size: 0.9rem;">🗑️ Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
         }
 
-        async function editBoat(id) {
+        function enterEditMode(id) {
+            const row = document.getElementById(`boat-row-${id}`);
+            if (!row) return;
+            
+            row.classList.add('editing');
+            
+            // Focus on the first input field
+            const firstInput = row.querySelector('.edit-input');
+            if (firstInput) {
+                firstInput.focus();
+                firstInput.select();
+            }
+        }
+        
+        function cancelEdit(id) {
+            const row = document.getElementById(`boat-row-${id}`);
+            if (!row) return;
+            
             const boat = boats.find(b => b.id === id);
             if (!boat) return;
-
-            const newName = prompt('Enter new boat name:', boat.name);
-            if (newName === null) return;
             
-            const newSkipper = prompt('Enter new skipper name:', boat.skipper);
-            if (newSkipper === null) return;
+            // Reset input values to original
+            const inputs = row.querySelectorAll('.edit-input');
+            inputs[0].value = boat.name; // name
+            inputs[1].value = boat.skipper; // skipper  
+            inputs[2].value = boat.phrf; // phrf
             
-            const newPhrf = prompt('Enter new PHRF rating:', boat.phrf);
-            if (newPhrf === null) return;
-
-            const phrfNumber = parseInt(newPhrf);
-            if (isNaN(phrfNumber)) {
-                showStatus('⚠️ PHRF rating must be a number.', 'error');
+            row.classList.remove('editing');
+        }
+        
+        async function saveBoat(id) {
+            const row = document.getElementById(`boat-row-${id}`);
+            if (!row) return;
+            
+            const boat = boats.find(b => b.id === id);
+            if (!boat) return;
+            
+            const inputs = row.querySelectorAll('.edit-input');
+            const newName = inputs[0].value.trim();
+            const newSkipper = inputs[1].value.trim();
+            const newPhrf = parseInt(inputs[2].value);
+            
+            // Validation
+            if (!newName) {
+                showStatus('⚠️ Boat name cannot be empty.', 'error');
+                inputs[0].focus();
                 return;
             }
-
+            
+            if (!newSkipper) {
+                showStatus('⚠️ Skipper name cannot be empty.', 'error');
+                inputs[1].focus();
+                return;
+            }
+            
+            if (isNaN(newPhrf) || newPhrf <= 0) {
+                showStatus('⚠️ PHRF rating must be a valid positive number.', 'error');
+                inputs[2].focus();
+                return;
+            }
+            
             // Check if new name conflicts with existing boat (excluding current boat)
             if (newName.toLowerCase() !== boat.name.toLowerCase() && 
                 boats.find(b => b.id !== id && b.name.toLowerCase() === newName.toLowerCase())) {
                 showStatus('⚠️ A boat with this name already exists.', 'error');
+                inputs[0].focus();
                 return;
             }
-
+            
             try {
                 // Update boat in the boat database document
                 const updatedBoats = boats.map(b => {
                     if (b.id === id) {
                         return {
                             ...b,
-                            name: newName.trim(),
-                            skipper: newSkipper.trim(),
-                            phrf: phrfNumber,
+                            name: newName,
+                            skipper: newSkipper,
+                            phrf: newPhrf,
                             updated: new Date().toISOString()
                         };
                     }
@@ -458,7 +563,8 @@
                     updated: new Date().toISOString()
                 });
                 
-                showStatus(`✅ Boat "${newName.trim()}" updated successfully!`, 'success');
+                row.classList.remove('editing');
+                showStatus(`✅ Boat "${newName}" updated successfully!`, 'success');
             } catch (error) {
                 console.error('Error updating boat:', error);
                 showStatus('❗ Error updating boat in database.', 'error');
@@ -508,6 +614,16 @@
 
         // Make getBoats available globally
         window.getBoats = getBoats;
+        
+        function handleEditKeydown(event, id) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                saveBoat(id);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                cancelEdit(id);
+            }
+        }
         
         // Cleanup listener when page unloads
         window.addEventListener('beforeunload', () => {
